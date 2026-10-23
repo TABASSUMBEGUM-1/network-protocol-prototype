@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Network Protocol Lab</title>
+<style>
+:root{--bg:#eef1f4;--sf:#fff;--ink:#14202b;--mu:#5b6b78;--ln:#cdd6dd;--ac:#0b7a75;--da:#2467c9;--ak:#2f8f4e;--bd:#c4372c;--wn:#c98a00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f171e;--sf:#18232c;--ink:#e6edf2;--mu:#8fa1ae;--ln:#2d3c48;--ac:#3cc4bb;--da:#6aa3ff;--ak:#59c47f;--bd:#ff7a6b;--wn:#e8b23a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f171e;--sf:#18232c;--ink:#e6edf2;--mu:#8fa1ae;--ln:#2d3c48;--ac:#3cc4bb;--da:#6aa3ff;--ak:#59c47f;--bd:#ff7a6b;--wn:#e8b23a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:18px 14px 40px}
+h1{font:700 26px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mu);margin:0 0 14px}
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--ln);margin-bottom:14px}
+.tabs button{border:0;background:none;color:var(--mu);font:600 15px inherit;font-family:inherit;padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--ac);border-color:var(--ac)}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:14px;margin-bottom:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end}
+.ctl label{display:flex;flex-direction:column;font-size:13px;color:var(--mu);gap:3px;min-width:120px}
+.ctl label b{color:var(--ink);font-weight:600}
+select,input[type=range]{font:inherit;color:var(--ink)}
+select{background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:6px}
+button.b{font:600 14px inherit;font-family:inherit;border:1px solid var(--ac);background:var(--ac);color:#fff;border-radius:6px;padding:8px 14px;cursor:pointer}
+button.b.o{background:none;color:var(--ac)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--da);outline-offset:2px}
+.stage{display:flex;align-items:stretch;gap:0}
+.node{width:78px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--ink);border-radius:8px;text-align:center;font-size:14px}
+.chan{position:relative;flex:1;height:150px;margin:0 6px;border-top:2px dashed var(--ln);border-bottom:2px dashed var(--ln)}
+.lane{position:absolute;left:8px;font-size:12px;color:var(--mu)}
+.pk{position:absolute;width:48px;height:30px;line-height:26px;text-align:center;font-size:12px;font-weight:700;border-radius:6px;border:2px solid;cursor:pointer;user-select:none;touch-action:manipulation}
+.pk.d{top:16%;background:var(--da);border-color:var(--da);color:#fff}
+.pk.a{top:62%;background:var(--ak);border-color:var(--ak);color:#fff}
+.pk.re{outline:2px dashed var(--wn);outline-offset:2px}
+.pk.bad{background:var(--bd);border-color:var(--bd);text-decoration:line-through}
+.pk.lost{background:none;color:var(--bd);border-color:var(--bd);border-style:dotted;opacity:.55;cursor:default}
+.strip{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 10px}
+.cell{width:34px;height:34px;border:2px solid var(--ln);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--mu)}
+.cell.ack{background:var(--ak);border-color:var(--ak);color:#fff}
+.cell.out{background:var(--wn);border-color:var(--wn);color:#fff}
+.cell.buf{background:var(--da);border-color:var(--da);color:#fff}
+.cell.win{box-shadow:0 3px 0 var(--ac);border-color:var(--ac)}
+.cell.want{border-color:var(--ink);color:var(--ink)}
+.cap{font-size:13px;color:var(--mu);margin:2px 0}
+.stats{display:flex;flex-wrap:wrap;gap:18px;font-size:14px;margin-top:6px}
+.stats span b{font-size:20px;display:block;line-height:1.1}
+#log{margin:8px 0 0;padding:0;list-style:none;font-size:13px;color:var(--mu);max-height:190px;overflow:auto}
+#log li{padding:2px 0;border-bottom:1px solid var(--ln)}
+#log li:first-child{color:var(--ink);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--mu);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+.gwrap{display:flex;gap:26px;flex-wrap:wrap}
+.g{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;color:var(--mu)}
+.gauge{width:76px;height:150px;border:2px solid var(--ink);border-radius:4px 4px 14px 14px;position:relative;overflow:hidden}
+.gauge .f{position:absolute;left:0;right:0;bottom:0;transition:height .1s}
+.g.off{opacity:.35}
+canvas{width:100%;height:170px;display:block}
+.hint{font-size:13px;color:var(--mu);margin:8px 0 0}
+[hidden]{display:none!important}
+@media(max-width:560px){.node{width:54px;font-size:12px}.pk{width:40px;font-size:11px}}
+body{background:radial-gradient(900px 420px at 88% -8%,color-mix(in srgb,var(--ac) 20%,transparent),transparent),radial-gradient(700px 420px at -8% 8%,color-mix(in srgb,var(--da) 18%,transparent),transparent),var(--bg);background-attachment:fixed}
+h1{font-size:34px;display:inline-block;background:linear-gradient(90deg,var(--da),var(--ac));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tabs{display:inline-flex;gap:2px;padding:4px;border:1px solid var(--ln);border-radius:999px;background:var(--sf)}
+.tabs button{border:0;margin:0;border-radius:999px;padding:8px 18px}
+.tabs button.on{background:var(--ac);color:var(--bg)}
+.card{border-radius:16px;box-shadow:0 8px 28px -14px rgba(0,0,0,.35)}
+input[type=range]{accent-color:var(--ac)}
+button.b{border-radius:999px;padding:9px 18px;transition:transform .12s}
+button.b:hover{transform:translateY(-2px)}
+.node{flex-direction:column;gap:2px;border:0;background:linear-gradient(160deg,color-mix(in srgb,var(--da) 22%,var(--sf)),color-mix(in srgb,var(--ac) 22%,var(--sf)));border-radius:14px;box-shadow:0 6px 16px -8px rgba(0,0,0,.4)}
+.node span{font-size:32px;line-height:1}
+.chan{border:0;height:150px;background:repeating-linear-gradient(90deg,var(--da) 0 10px,transparent 10px 20px) 0 38px/100% 3px no-repeat,repeating-linear-gradient(90deg,var(--ak) 0 10px,transparent 10px 20px) 0 107px/100% 3px no-repeat;border-radius:10px}
+.chan.run{animation:flow 1s linear infinite}
+@keyframes flow{to{background-position:20px 38px,-20px 107px}}
+.lane{opacity:.8}
+.pk{border:0;width:48px;height:32px;line-height:32px;font-size:11px;padding-right:6px;filter:none}
+.pk.d{clip-path:polygon(0 0,80% 0,100% 50%,80% 100%,0 100%);background:linear-gradient(135deg,var(--da),color-mix(in srgb,var(--da) 55%,#000))}
+.pk.a{clip-path:polygon(20% 0,100% 0,100% 100%,20% 100%,0 50%);padding:0 0 0 8px;background:linear-gradient(135deg,var(--ak),color-mix(in srgb,var(--ak) 55%,#000))}
+.pk.re{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.3) 0 6px,transparent 6px 12px);outline:0}
+.pk.bad{background:linear-gradient(135deg,var(--bd),color-mix(in srgb,var(--bd) 55%,#000));text-decoration:none}
+.pk.lost{clip-path:none;background:none;border:0;font-size:24px;opacity:1;padding:0}
+.cell{border-radius:9px;width:36px;height:36px}
+.cell.ack{background:linear-gradient(160deg,var(--ak),color-mix(in srgb,var(--ak) 60%,#000))}
+.stats span{background:var(--bg);border-radius:12px;padding:8px 14px;min-width:96px}
+.stats span b{font:700 28px/1.1 Georgia,serif}
+#s2{color:var(--wn)}#s3,#c3{color:var(--bd)}#s4,#c2{color:var(--ak)}#s1,#c1{color:var(--da)}
+#log{background:#0c1319;color:#8fd9cc;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:10px 12px;border-radius:10px;max-height:210px}
+#log li{border-bottom:1px dashed #243541}
+#log li:first-child{color:#fff}
+#done{margin-top:10px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--ak) 18%,transparent);border:1px solid var(--ak);font-weight:600;animation:pop .5s}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+.gauge{width:96px;height:160px;border-radius:8px 8px 28px 28px;background:color-mix(in srgb,var(--bg) 80%,var(--sf))}
+.gauge .f{background:linear-gradient(var(--da),color-mix(in srgb,var(--da) 55%,#000))!important}
+#tf{background:linear-gradient(var(--wn),color-mix(in srgb,var(--wn) 55%,#000))!important}
+.gauge .f::before{content:"";position:absolute;left:-50%;top:-9px;width:200%;height:18px;background:inherit;border-radius:45%;animation:wave 3s linear infinite}
+.gauge .f[style*="height: 0%"]::before{display:none}
+@keyframes wave{to{transform:translateX(25%)}}
+@media(prefers-reduced-motion:reduce){.chan.run,.gauge .f::before{animation:none}}
+</style></head>
+<body><main>
+<h1>Network Protocol Lab</h1>
+<p class="sub">Computer Networks prototype: Data Link flow control and Network Layer congestion control.</p>
+<div class="tabs" role="tablist">
+<button class="on" data-t="sw" role="tab">Sliding window</button>
+<button data-t="cc" role="tab">Congestion control</button>
+</div>
+
+<section id="sw">
+<div class="card"><div class="ctl">
+<label>Protocol<select id="proto"><option value="gbn">Go-Back-N</option><option value="sr">Selective Repeat</option></select></label>
+<label>Window size: <b id="wv">4</b><input id="w" type="range" min="1" max="7" value="4"></label>
+<label>Speed: <b id="sv">1.0x</b><input id="spd" type="range" min="0.5" max="3" step="0.25" value="1"></label>
+<label>Random loss: <b id="lv">0%</b><input id="loss" type="range" min="0" max="40" step="5" value="0"></label>
+<label>Click on a packet to<select id="clk"><option value="lose">Lose it</option><option value="bad">Corrupt it</option></select></label>
+<button class="b" id="go">Start</button><button class="b o" id="rs">Reset</button>
+</div></div>
+<div class="card">
+<div class="cap"><b>Sender</b> (underlined frames are inside the window)</div><div class="strip" id="sstrip"></div>
+<div class="stage"><div class="node"><span>💻</span>Sender</div>
+<div class="chan" id="chan"><span class="lane" style="top:2px">frames →</span><span class="lane" style="bottom:2px">← acknowledgements</span><div id="pks"></div></div>
+<div class="node"><span>🖥️</span>Receiver</div></div>
+<div class="cap" style="margin-top:10px"><b>Receiver</b></div><div class="strip" id="rstrip"></div>
+<div class="legend"><span><i style="background:var(--wn)"></i>sent, waiting for ACK</span><span><i style="background:var(--ak)"></i>acknowledged / delivered</span><span><i style="background:var(--da)"></i>buffered (Selective Repeat)</span><span><i style="border:2px solid var(--ink)"></i>receiver expects this</span></div>
+<div class="stats"><span><b id="s1">0</b>frames sent</span><span><b id="s2">0</b>retransmissions</span><span><b id="s3">0</b>lost in channel</span><span><b id="s4">0</b>delivered in order</span><span><b id="s5">–</b>timer</span></div>
+<div id="done" hidden>🎉 All 14 frames delivered in order. Try again with a bigger window or more loss.</div>
+</div>
+<div class="card"><b>Event log</b><ul id="log"></ul>
+<p class="hint">Try this: start with Go-Back-N and lose frame 2. The receiver discards frames 3 and 4, and the sender resends from 2 after the timeout. Switch to Selective Repeat and repeat. Only frame 2 is resent.</p></div>
+</section>
+
+<section id="cc" hidden>
+<div class="card"><div class="ctl">
+<label>Algorithm<select id="mode"><option value="leaky">Leaky bucket</option><option value="token">Token bucket</option></select></label>
+<label>Bucket size: <b id="cv">12</b><input id="cap" type="range" min="4" max="30" value="12"></label>
+<label>Output rate: <b id="rv">3</b> pkt/s<input id="rate" type="range" min="1" max="10" value="3"></label>
+<label>Auto traffic: <b id="av">4</b> pkt/s avg<input id="air" type="range" min="1" max="10" value="4"></label>
+<label style="min-width:90px;flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="auto" checked>Auto bursts</label>
+<button class="b" id="burst">Send burst of 10</button><button class="b o" id="crs">Reset</button>
+</div></div>
+<div class="card"><div class="gwrap">
+<div class="g"><div class="gauge"><div class="f" id="qf" style="background:var(--da)"></div></div><span id="qt">Packets waiting</span></div>
+<div class="g" id="tg"><div class="gauge"><div class="f" id="tf" style="background:var(--wn)"></div></div><span id="tt">Tokens</span></div>
+<div style="flex:1;min-width:240px"><canvas id="ch"></canvas>
+<div class="legend"><span><i style="background:var(--da)"></i>packets arriving per 0.5 s</span><span><i style="background:var(--ac)"></i>packets leaving per 0.5 s</span></div></div>
+</div>
+<div class="stats"><span><b id="c1">0</b>arrived</span><span><b id="c2">0</b>sent out</span><span><b id="c3">0</b>dropped (overflow)</span></div>
+<p class="hint" id="chint"></p></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s),N=14,P=1500,GAP=450,TO=2*P+1000;
+let S,C,tab='sw',last=0;
+const W=()=>+$('#w').value,GBN=()=>$('#proto').value==='gbn',spd=()=>+$('#spd').value;
+
+/* ---------- Sliding window ---------- */
+function logm(m){S.log.unshift((S.t/1000).toFixed(1)+'s  '+m);S.log.length=Math.min(S.log.length,40)}
+function swReset(){
+ S={t:0,base:0,next:0,acc:GAP,pk:[],id:0,acked:Array(N).fill(false),tm:Array(N).fill(null),gT:null,rcv:Array(N).fill(false),exp:0,run:false,done:false,sent:0,re:0,lost:0,log:[]};
+ $('#go').textContent='Start';logm('Ready. Press Start, then click packets in flight.');
+}
+function roll(p){if(Math.random()*100<+$('#loss').value)p.at=.25+Math.random()*.5}
+function send(q,re){
+ const p={id:S.id++,k:'d',q,pos:0,re};roll(p);S.pk.push(p);S.sent++;if(re)S.re++;
+ if(GBN()){if(S.gT==null)S.gT=S.t+TO}else S.tm[q]=S.t+TO;
+ logm((re?'Resend frame ':'Send frame ')+q);
+}
+function ack(n){const p={id:S.id++,k:'a',q:n,pos:0};roll(p);S.pk.push(p)}
+function rxData(p){
+ if(p.bad){logm('Frame '+p.q+' failed the CRC check, discarded');return}
+ if(GBN()){
+  if(p.q==S.exp){S.rcv[p.q]=true;S.exp++;logm('Receiver accepts frame '+p.q);ack(p.q)}
+  else{logm('Frame '+p.q+' is out of order, discarded');if(S.exp>0)ack(S.exp-1)}
+ }else if(p.q<S.exp+W()){
+  if(p.q>=S.exp&&!S.rcv[p.q])logm('Receiver buffers frame '+p.q);
+  S.rcv[p.q]=true;ack(p.q);while(S.rcv[S.exp])S.exp++;
+ }
+}
+function rxAck(p){
+ if(p.bad){logm('ACK '+p.q+' was corrupted, ignored');return}
+ if(GBN()){
+  if(p.q>=S.base){S.base=p.q+1;S.gT=S.base<S.next?S.t+TO:null;logm('ACK '+p.q+' received, window starts at '+S.base)}
+  else logm('Duplicate ACK '+p.q+' ignored');
+ }else{S.acked[p.q]=true;S.tm[p.q]=null;logm('ACK '+p.q+' received');while(S.base<N&&S.acked[S.base])S.base++}
+ if(S.base>=N){S.run=false;S.done=true;logm('All '+N+' frames delivered.');$('#go').textContent='Restart'}
+}
+function swStep(dt){
+ if(!S.run)return;
+ const d=dt*spd();S.t+=d;S.acc=Math.min(S.acc+d,GAP);
+ if(S.acc>=GAP&&S.next<N&&S.next<S.base+W()){send(S.next++);S.acc=0}
+ for(const p of S.pk){
+  if(p.lost){p.dead-=d;continue}
+  p.pos+=d/P;
+  if(p.at!=null&&p.pos>=p.at){p.lost=true;p.dead=700;S.lost++;logm((p.k=='d'?'Frame ':'ACK ')+p.q+' lost in the channel');continue}
+  if(p.pos>=1){p.done=true;(p.k=='d'?rxData:rxAck)(p)}
+ }
+ S.pk=S.pk.filter(p=>!p.done&&!(p.lost&&p.dead<=0));
+ if(GBN()){
+  if(S.gT!=null&&S.t>=S.gT&&S.base<S.next){logm('Timeout. Go back to frame '+S.base);for(let i=S.base;i<S.next;i++)send(i,true);S.gT=S.t+TO}
+ }else for(let i=S.base;i<S.next;i++)if(!S.acked[i]&&S.tm[i]!=null&&S.t>=S.tm[i]){logm('Timeout on frame '+i);send(i,true)}
+}
+function swDraw(){
+ let h='',r='';
+ for(let i=0;i<N;i++){
+  let c='cell';
+  const a=GBN()?i<S.base:S.acked[i];
+  if(a)c+=' ack';else if(i<S.next)c+=' out';
+  if(i>=S.base&&i<S.base+W()&&!S.done)c+=' win';
+  h+=`<div class="${c}">${i}</div>`;
+  let d='cell';
+  if(i<S.exp)d+=' ack';else if(S.rcv[i])d+=' buf';else if(i==S.exp&&!S.done)d+=' want';
+  r+=`<div class="${d}">${i}</div>`;
+ }
+ $('#sstrip').innerHTML=h;$('#rstrip').innerHTML=r;$('#chan').classList.toggle('run',S.run);$('#done').hidden=!S.done;
+ $('#pks').innerHTML=S.pk.map(p=>{
+  const x=p.k=='d'?p.pos:1-p.pos;
+  const lab=p.lost?'💥':(p.k=='d'?'F'+p.q:'ACK'+p.q);
+  return `<div class="pk ${p.k}${p.re?' re':''}${p.bad?' bad':''}${p.lost?' lost':''}" data-id="${p.id}" style="left:calc((100% - 48px)*${Math.max(0,Math.min(1,x)).toFixed(3)})">${lab}</div>`}).join('');
+ $('#s1').textContent=S.sent;$('#s2').textContent=S.re;$('#s3').textContent=S.lost;$('#s4').textContent=S.exp;
+ let tm=null;if(GBN())tm=S.gT;else for(let i=S.base;i<S.next;i++)if(S.tm[i]!=null&&(tm==null||S.tm[i]<tm))tm=S.tm[i];
+ $('#s5').textContent=tm==null?'–':Math.max(0,(tm-S.t)/1000).toFixed(1)+'s';
+ const L=$('#log'),html=S.log.slice(0,12).map(x=>`<li>${x}</li>`).join('');if(L.dataset.h!==html){L.innerHTML=html;L.dataset.h=html}
+}
+$('#pks').addEventListener('pointerdown',e=>{
+ const el=e.target.closest('.pk');if(!el)return;
+ const p=S.pk.find(x=>x.id==el.dataset.id);if(!p||p.lost||p.bad)return;
+ const kind=p.k=='d'?'Frame ':'ACK ';
+ if($('#clk').value=='lose'){p.lost=true;p.dead=700;S.lost++;logm(kind+p.q+' dropped by you')}
+ else{p.bad=true;logm(kind+p.q+' corrupted by you')}
+ e.preventDefault();
+});
+$('#go').onclick=()=>{
+ if(S.done)swReset();
+ S.run=!S.run;$('#go').textContent=S.run?'Pause':'Resume';
+};
+$('#rs').onclick=swReset;
+$('#proto').onchange=swReset;
+$('#w').oninput=()=>{$('#wv').textContent=W();if(S.next==0)return;swReset()};
+$('#spd').oninput=()=>$('#sv').textContent=spd().toFixed(1)+'x';
+$('#loss').oninput=()=>$('#lv').textContent=$('#loss').value+'%';
+
+/* ---------- Congestion control ---------- */
+const cap=()=>+$('#cap').value,rate=()=>+$('#rate').value,mode=()=>$('#mode').value;
+const buf=()=>mode()=='leaky'?cap():10;
+function ccReset(){C={q:0,tok:mode()=='token'?cap():0,acc:0,drop:0,out:0,arr:0,bins:[{i:0,o:0}],bt:0,at:1200};hint()}
+function hint(){
+ $('#chint').textContent=mode()=='leaky'
+ ?'Leaky bucket: packets enter the bucket in bursts but always leave at the fixed output rate. When the bucket is full, new packets are dropped.'
+ :'Token bucket: tokens build up at the output rate. A packet needs one token to leave, so a saved-up bucket lets a burst through at once. Packets wait in a 10-packet buffer and are dropped if it overflows.';
+ $('#tg').classList.toggle('off',mode()=='leaky');
+}
+function arrive(n){for(let i=0;i<n;i++){C.arr++;C.bins[C.bins.length-1].i++;if(C.q<buf())C.q++;else C.drop++}}
+function ccStep(dt){
+ C.bt+=dt;if(C.bt>=500){C.bt=0;C.bins.push({i:0,o:0});if(C.bins.length>40)C.bins.shift()}
+ const b=C.bins[C.bins.length-1];
+ if($('#auto').checked){C.at+=dt;if(C.at>=1500){C.at=0;arrive(Math.round(+$('#air').value*1.5*(.2+Math.random()*1.6)))}}
+ if(C.q>buf())C.q=buf();
+ if(mode()=='leaky'){
+  C.acc+=rate()*dt/1000;
+  while(C.acc>=1){if(C.q>0){C.q--;C.out++;b.o++;C.acc--}else C.acc=0}
+ }else{
+  C.tok=Math.min(cap(),C.tok+rate()*dt/1000);
+  while(C.tok>=1&&C.q>0){C.tok--;C.q--;C.out++;b.o++}
+ }
+}
+function ccDraw(){
+ $('#qf').style.height=(C.q/buf()*100)+'%';
+ $('#qt').textContent='Packets waiting: '+C.q+' / '+buf();
+ $('#tf').style.height=(mode()=='token'?C.tok/cap()*100:0)+'%';
+ $('#tt').textContent=mode()=='token'?'Tokens: '+C.tok.toFixed(1)+' / '+cap():'Tokens: not used';
+ $('#c1').textContent=C.arr;$('#c2').textContent=C.out;$('#c3').textContent=C.drop;
+ const cv=$('#ch'),dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+ if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+ const x=cv.getContext('2d'),cs=getComputedStyle(document.documentElement);
+ x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+ const max=Math.max(6,...C.bins.map(b=>Math.max(b.i,b.o))),bw=w/40,base=h-16;
+ x.strokeStyle=cs.getPropertyValue('--ln');x.beginPath();x.moveTo(0,base+.5);x.lineTo(w,base+.5);x.stroke();
+ const off=40-C.bins.length;
+ C.bins.forEach((b,k)=>{
+  const px=(off+k)*bw;
+  x.fillStyle=cs.getPropertyValue('--da');const hi=b.i/max*(base-4);x.fillRect(px+1,base-hi,bw/2-1,hi);
+  x.fillStyle=cs.getPropertyValue('--ac');const ho=b.o/max*(base-4);x.fillRect(px+bw/2,base-ho,bw/2-1,ho);
+ });
+ x.fillStyle=cs.getPropertyValue('--mu');x.font='11px system-ui';x.fillText('last 20 s  (tallest bar = '+max+' packets)',4,h-3);
+}
+$('#mode').onchange=ccReset;$('#crs').onclick=ccReset;
+$('#burst').onclick=()=>arrive(10);
+$('#cap').oninput=()=>{$('#cv').textContent=cap()};
+$('#rate').oninput=()=>$('#rv').textContent=rate();
+$('#air').oninput=()=>$('#av').textContent=$('#air').value;
+
+/* ---------- Tabs + main loop ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+ tab=b.dataset.t;
+ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ $('#sw').hidden=tab!='sw';$('#cc').hidden=tab!='cc';
+});
+function frame(ts){
+ const dt=Math.min(60,ts-(last||ts));last=ts;
+ if(tab=='sw'){swStep(dt);swDraw()}else{ccStep(dt);ccDraw()}
+ requestAnimationFrame(frame);
+}
+swReset();ccReset();requestAnimationFrame(frame);
+</script></body></html>
